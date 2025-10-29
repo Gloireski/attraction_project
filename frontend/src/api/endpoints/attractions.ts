@@ -1,0 +1,1 @@
+// api/endpoints/attractions.ts attractions API endpoints

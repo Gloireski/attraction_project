@@ -1,0 +1,1 @@
+// api/queryClient.ts react-query client with default config
