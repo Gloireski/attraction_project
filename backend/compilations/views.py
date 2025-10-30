@@ -12,16 +12,6 @@ from .serializers import (
 )
 from users.utils import get_user_profile
 
-# Helper: get the user's profile
-# def get_user_profile(request):
-#     session_key = request.session.session_key
-#     if not session_key:
-#         return None
-#     try:
-#         return UserProfile.objects.get(session_key=session_key)
-#     except UserProfile.DoesNotExist:
-#         return None
-
 # List compilations for current user
 @api_view(['GET'])
 def compilations_list(request):

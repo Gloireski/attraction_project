@@ -2,6 +2,8 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
+from compilations.models import Compilation
 from .models import UserProfile
 from .serializers import UserProfileSerializer
 from rest_framework.decorators import api_view
@@ -48,9 +50,18 @@ def get_session(request):
 def logout(request):
     """Logout user and delete associated session"""
     session_key = request.session.session_key
-    if session_key:
-        UserProfile.objects.filter(session_key=session_key).delete()
-        request.session.flush()
+    if not session_key:
+        return Response({'detail': 'No active session'}, status=status.HTTP_400_BAD_REQUEST)
+    # Fetch user profile first
+    profile = UserProfile.objects.filter(session_key=session_key).first()
+    if profile:
+        # Delete associated compilations BEFORE deleting the profile
+        Compilation.objects.filter(user_profile=profile).delete()
+        profile.delete()
+
+    # Clear Django session
+    request.session.flush()
+
     return Response({'detail': 'Logged out successfully'}, status=status.HTTP_200_OK)
 
 
