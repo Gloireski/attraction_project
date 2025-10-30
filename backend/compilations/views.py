@@ -10,22 +10,24 @@ from .models import Attraction, UserProfile, Compilation, CompilationItem
 from .serializers import (
    CompilationSerializer, CompilationItemSerializer
 )
+from users.utils import get_user_profile
 
 # Helper: get the user's profile
-def get_user_profile(request):
-    session_key = request.session.session_key
-    if not session_key:
-        return None
-    try:
-        return UserProfile.objects.get(session_key=session_key)
-    except UserProfile.DoesNotExist:
-        return None
+# def get_user_profile(request):
+#     session_key = request.session.session_key
+#     if not session_key:
+#         return None
+#     try:
+#         return UserProfile.objects.get(session_key=session_key)
+#     except UserProfile.DoesNotExist:
+#         return None
 
 # List compilations for current user
 @api_view(['GET'])
 def compilations_list(request):
     print( "compilations_list called" )
     profile = get_user_profile(request)
+    print( "User profile:", profile )
     if not profile:
         return Response([], status=status.HTTP_200_OK)
     compilations = Compilation.objects.filter(user_profile=profile)

@@ -8,8 +8,10 @@ class Category(models.Model):
 
 class Attraction(models.Model):
     CATEGORY_CHOICES = [
-        ('restaurant', 'Restaurant'),
-        ('hotel', 'Hôtel'),
+        ('restaurants', 'Restaurants'),
+        ('hotels', 'Hôtels'),
+        ('attractions', 'Attractions'),
+        ('geos', 'Sites Géographiques'),
         ('monument', 'Monument'),
         ('museum', 'Musée'),
         ('park', 'Parc'),

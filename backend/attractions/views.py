@@ -1,4 +1,5 @@
 import os
+import threading
 import time
 from django.shortcuts import render
 from rest_framework.response import Response
@@ -26,6 +27,7 @@ from .serializers import (
     AttractionSerializer, AttractionListSerializer
 )
 from .services import TripAdvisorService
+from .utils import tripadvisor_category
 
 START_TIME = time.time()
 
@@ -77,6 +79,31 @@ def filter_attractions(request, queryset):
         queryset = filter_by_radius(queryset, float(lat), float(lng), radius)
 
     return queryset
+
+def sync_attractions_to_db(results):
+    """Background task to save TripAdvisor results to local DB"""
+    for result in results:
+        location_id = result.get('location_id')
+        details = TripAdvisorService().get_location_details(location_id)
+        if details:
+            Attraction.objects.update_or_create(
+                tripadvisor_id=location_id,
+                defaults={
+                    'name': details.get('name', ''),
+                    'description': details.get('description', ''),
+                    'category': details.get('category', 'unknown'),
+                    'city': result.get('address_obj', {}).get('city', ''),
+                    'country': result.get('address_obj', {}).get('country', ''),
+                    'latitude': details.get('latitude', 0.0),
+                    'longitude': details.get('longitude', 0.0),
+                    'rating': details.get('rating', 0),
+                    'num_reviews': details.get('num_reviews', 0),
+                    'photo_count': details.get('photo_count', 0),
+                    'website': details.get('website', ''),
+                    'phone': details.get('phone', ''),
+                    'photo_url': details.get('rating_image_url', ''),
+                }
+            )
 
 @api_view(['GET'])
 def home(request):
@@ -150,13 +177,91 @@ def attractions_list(request):
     return Response(serializer.data)
 
 @api_view(['GET'])
+def attractions_search(request):
+    """
+    Search attractions with multiple filters.
+    Fallback to TripAdvisor API if local DB is empty.
+    """
+    print("search params:", request.GET)
+    queryset = Attraction.objects.all()
+    filterset = AttractionFilter(request.GET, queryset=queryset)
+
+    if filterset.is_valid():
+        filtered_qs = filterset.qs
+
+        if not filtered_qs.exists():
+            # No local results, fetch from TripAdvisor
+            service = TripAdvisorService()
+            query = request.GET.get('city') or request.GET.get('country') or 'World'
+            category = request.GET.get('category')
+            results = service.search_location(query=query, category=category)
+
+            # Return TripAdvisor results immediately
+            serializer_data = []
+            for result in results:
+                serializer_data.append({
+                    'name': result.get('name', ''),
+                    'city': result.get('address_obj', {}).get('city', ''),
+                    'country': result.get('address_obj', {}).get('country', ''),
+                    'tripadvisor_id': result.get('location_id'),
+                    'category': result.get('category', ''),
+                })
+
+            # Start background thread to update local DB
+            threading.Thread(target=sync_attractions_to_db, args=(results,), daemon=True).start()
+
+            return Response(serializer_data)
+
+        # Return local DB results if found
+        serializer = AttractionListSerializer(filtered_qs, many=True)
+        return Response(serializer.data)
+
+    return Response(filterset.errors, status=400)
+
+@api_view(['GET'])
 def attraction_detail(request, pk):
+    """
+    Get detailed information about a specific attraction.
+    Fetch from TripAdvisor API if local DB is empty.
+    """
+    print("Fetching detail for location_id:", pk)
     try:
         attraction = Attraction.objects.get(pk=pk)
+        serializer = AttractionSerializer(attraction)
+        return Response(serializer.data)
     except Attraction.DoesNotExist:
-        return Response({"error": "Attraction not found"}, status=404)
-    serializer = AttractionSerializer(attraction)
-    return Response(serializer.data)
+        # Fallback to TripAdvisor
+        service = TripAdvisorService()
+        attraction = service.sync_single_attraction(location_id=pk)
+        if not attraction:
+            return Response({"error": "Attraction not found"}, status=404)
+
+        # serializer = AttractionSerializer(attraction)
+        attraction_data = AttractionSerializer(attraction).data
+        # return Response(serializer.data)
+    # Fetch nearby attractions using TripAdvisor API
+    latitude = attraction_data.get("latitude")
+    longitude = attraction_data.get("longitude")
+    category = attraction_data.get("category")
+    category = tripadvisor_category(category)
+    print("Category for nearby", category)
+
+    nearby_results = []
+    if latitude and longitude:
+        try:
+            nearby_results = service.search_nearby(
+                latitude=float(latitude),
+                longitude=float(longitude),
+                category=category,
+                radius=10  # default radius in km
+            )
+        except Exception as e:
+            print("Error fetching nearby attractions:", e)
+
+    # Include nearby attractions in response
+    attraction_data["nearby_attractions"] = nearby_results
+
+    return Response(attraction_data)
 
 @api_view(['GET'])
 def attractions_popular(request):
@@ -243,7 +348,7 @@ def sync_from_tripadvisor(request):
     service = TripAdvisorService()
     query = request.data.get('query')
     # print("Sync query:", query)
-    category = request.data.get('category').lower()
+    category = request.data.get('category')
     print("Sync query {} category: {}", query, category)
 
     results = service.search_location(query, category)

@@ -2,7 +2,7 @@ import requests
 from config import settings
 from typing import Dict, List, Optional
 import logging
-
+from .models import Attraction
 logger = logging.getLogger(__name__)
 
 class TripAdvisorService:
@@ -44,6 +44,45 @@ class TripAdvisorService:
         print("Search Location Data:", data)
         return data.get('data', []) if data else []
     
+    def sync_single_attraction(self, location_id):
+        details = self.get_location_details(location_id)
+        if not details:
+            return None
+        # Extract category safely
+        category_info = details.get("category") or {}
+        category_name = category_info.get("name", "").strip() or ""
+        # Map only fields that exist in Attraction model
+        defaults = {
+            "tripadvisor_id": details.get("location_id"),
+            "name": details.get("name"),
+            "description": details.get("description") or "",
+            "address": details.get("address_obj", {}).get("address_string", ""),
+            "city": details.get("address_obj", {}).get("city", ""),
+            "country": details.get("address_obj", {}).get("country", ""),
+            "latitude": details.get("latitude") or 0.0,
+            "longitude": details.get("longitude") or 0.0,
+            "phone": details.get("phone") or "",
+            "website": details.get("website") or "",
+            "email": details.get("email") or "",
+            "rating": float(details.get("rating") or 0),
+            "num_reviews": int(details.get("num_reviews") or 0),
+            "photo_url": details.get("rating_image_url") or "",
+            "photo_count": int(details.get("photo_count") or 0),
+            "category": category_name,
+            "opening_hours": details.get("hours") or {},
+            "awards": details.get("awards") or [],
+            "cuisine_types": details.get("cuisine") or [],
+            "hotel_style": details.get("hotel_style") or [],
+            "hotel_class": details.get("hotel_class") or None,
+        }
+
+        attraction, _ = Attraction.objects.update_or_create(
+            tripadvisor_id=location_id,
+            defaults=defaults
+        )
+        return attraction
+
+    
     def get_location_details(self, location_id: str) -> Optional[Dict]:
         """Get detailed information about a location"""
         # data = self._make_request(f'location/{location_id}/details', {
@@ -80,6 +119,7 @@ class TripAdvisorService:
             'radiusUnit': 'km',
             'language': 'fr'
         }
+        print("Searching nearby with params:", params.values())
         if category:
             params['category'] = category
         
