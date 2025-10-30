@@ -1,43 +1,38 @@
-'use client'
+'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { attractionsApi } from '@/api/attractions';
-import type { Attraction } from '@/types/attractions'
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import ProfileSelector from '@/components/ProfileSelector';
+import CountrySelector from '@/components/CountrySelector';
 
-export default function Home() {
-  const { data: popularAttractions, isLoading } = useQuery<Attraction[]>({
-    queryKey: ['popularAttractions'],
-    queryFn: () => attractionsApi.getPopular('Maroc'),
-  });
+export default function LandingPage() {
+  const [role, setRole] = useState<string | null>(null);
+  const [country, setCountry] = useState<string>('');
+  const router = useRouter();
 
-  if (isLoading) return <div>Loading...</div>;
+  const handleSubmit = () => {
+    if (role && country) {
+      router.push(`/home?country=${country}&role=${role}`);
+    }
+  };
 
   return (
-    <div className="container mx-auto p-2">
-      <h1 className="text-xl font-bold mb-4">Popular Attractions</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {popularAttractions?.map((attraction) => (
-          <div
-            key={attraction.id}
-            className="border rounded-lg overflow-hidden shadow hover:shadow-lg transition"
-          >
-            {attraction.photo_url && (
-              <img
-                src={attraction.photo_url}
-                alt={attraction.name}
-                className="w-full h-48 object-cover"
-              />
-            )}
-            <div className="p-4">
-              <h2 className="text-xl font-semibold">{attraction.name}</h2>
-              <p className="text-gray-500">Rating: {attraction.rating} ⭐</p>
-              <p className="text-gray-400">
-                {attraction.city}, {attraction.country}
-              </p>
-            </div>
-          </div>
-        ))}
+    <main className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-blue-100 to-white px-6">
+      <h1 className="text-4xl font-bold text-primary mb-8">🌍 ExploreNow</h1>
+      <p className="text-gray-600 mb-6">Découvrez les attractions les plus populaires selon votre profil.</p>
+
+      <ProfileSelector selected={role} onSelect={setRole} />
+      <div className="mt-6 w-full max-w-sm">
+        <CountrySelector value={country} onChange={setCountry} />
       </div>
-    </div>
+
+      <button
+        disabled={!role || !country}
+        onClick={handleSubmit}
+        className="mt-10 px-8 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
+      >
+        Explorer
+      </button>
+    </main>
   );
 }

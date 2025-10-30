@@ -12,4 +12,7 @@ export type Attraction = {
   price_level?: number;
   category: string;
   photo_url?: string;
+  likes?: number
+  score?: number
+  address?: string
 };
