@@ -1,3 +1,6 @@
+// import { loa}
+
+
 export async function clientLoader() {
   // you can now fetch data here
   return {
@@ -5,6 +8,10 @@ export async function clientLoader() {
   };
 }
 
-export default function Component({ loaderData }) {
+interface LoaderData {
+  title: string;
+}
+
+export default function Component({ loaderData }: { loaderData: LoaderData }) {
   return <h1>{loaderData.title}</h1>;
 }

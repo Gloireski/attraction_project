@@ -1,11 +1,12 @@
-import "./index.css";
+// ...
+import Home from "./routes/home";
+import { Route, Routes } from "react-router";
 
 export default function App() {
   return (
-    <OtherProviders>
-      <AppLayout>
-        <RouterProvider router={router} />
-      </AppLayout>
-    </OtherProviders>
+    <Routes>
+      {/* <Route path="/about" element={<About />} /> */}
+      <Route path="/" element={<Home />} />
+    </Routes>
   );
 }

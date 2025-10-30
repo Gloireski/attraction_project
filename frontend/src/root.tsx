@@ -1,3 +1,4 @@
+//  src/root.tsx app entry point behalf of index.html
 import {
   Links,
   Meta,

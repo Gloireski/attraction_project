@@ -38,10 +38,15 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "attractions",
+    # Third party
     "rest_framework",
     "django_filters",
     "corsheaders",
+    "drf_spectacular",
+    # Local apps
+    "attractions",
+    "users",
+    "compilations"
 ]
 
 MIDDLEWARE = [
@@ -81,6 +86,10 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# TripAdvisor API 
+TRIPADVISOR_API_URL = "https://api.content.tripadvisor.com/api/v1"
+TRIPADVISOR_API_KEY = "41BF310E8FD146A19DED6CF634A6C16B"
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
