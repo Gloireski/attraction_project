@@ -1,2 +1,0 @@
-// Attractions List with Map
-

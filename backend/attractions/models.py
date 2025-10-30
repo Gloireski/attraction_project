@@ -12,12 +12,6 @@ class Attraction(models.Model):
         ('hotels', 'Hôtels'),
         ('attractions', 'Attractions'),
         ('geos', 'Sites Géographiques'),
-        ('monument', 'Monument'),
-        ('museum', 'Musée'),
-        ('park', 'Parc'),
-        ('entertainment', 'Divertissement'),
-        ('shopping', 'Shopping'),
-        ('nightlife', 'Vie Nocturne'),
     ]
     
     PRICE_LEVELS = [
