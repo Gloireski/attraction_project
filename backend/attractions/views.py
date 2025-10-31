@@ -31,6 +31,9 @@ from .utils import tripadvisor_category
 
 START_TIME = time.time()
 
+VALID_CATEGORIES = ["hotel", "attraction", "restaurant", "geographic"]
+VALID_ATTRACTIONS = ["hotel", "attraction", "restaurant"]
+
 def filter_by_radius(queryset, lat, lng, radius):
     """Filter attractions within radius using Haversine formula"""
     def haversine(lon1, lat1, lon2, lat2):
@@ -266,14 +269,16 @@ def attraction_detail(request, pk):
 @api_view(['GET'])
 def attractions_popular(request):
     country_query = request.GET.get('country')
-    print("Country filter:", country_query)
-    limit = int(request.GET.get('limit', 10))
+    print("Country query:", country_query)
+    limit = int(request.GET.get('limit', 5))
 
     service = TripAdvisorService()
     query = country_query if country_query else 'World'
 
     # Recherche des locations via TripAdvisor
-    search_results = service.search_location(query=query, category="attractions")
+    search_results = service.search_location(query=query, country=country_query)
+    # search_results = service.search_locations_by_country(country_name=query, limit=limit)
+    # print("result ", search_results)
     results = []
 
     for result in search_results:
@@ -281,18 +286,28 @@ def attractions_popular(request):
         country_name = address_obj.get('country', '').strip()
 
         # Filtrer uniquement les résultats correspondant au pays demandé
-        if not country_name or (country_query and country_name.lower() != country_query.lower()):
-            continue
+        # if not country_name or (country_query and country_name.lower() != country_query.lower()):
+            # continue
 
         location_id = result.get('location_id')
         details = service.get_location_details(location_id)
+        photo_data = service.get_location_photos(location_id)
+        print("photo ",photo_data)
+        # if photo_data:  # photo_data is a dict, not a list
+        #     print("photo url:", photo_data['photo_url'])
+        #     print("caption:", photo_data['caption'])
+        #     print("username:", photo_data['username'])
+        # else:
+        #     print("No photo found")
+        # print(photo_data["photo_url"], photo_data["caption"])
         if not details:
+            # print(" r ",result.get('category'))
             continue
 
         city = address_obj.get('city', '').strip()
         address = address_obj.get('address_string', '').strip()
 
-        # ✅ Fallback : si l’adresse est vide, on construit une version basique
+        # Fallback : si l’adresse est vide, on construit une version basique
         if not address:
             parts = [part for part in [city, country_name] if part]
             address = ", ".join(parts) if parts else country_name
@@ -312,14 +327,14 @@ def attractions_popular(request):
             photo_count = int(details.get('photo_count') or 0)
         except (ValueError, TypeError):
             photo_count = 0
-
+            
         result_data = {
             "id": location_id,
             "name": details.get('name', ''),
             "description": details.get('description', ''),
             "city": city,
             "country": country_name,
-            "address": address,  # ✅ avec fallback automatique
+            "address": address,  # avec fallback automatique
             "latitude": float(details.get('latitude') or 0.0),
             "longitude": float(details.get('longitude') or 0.0),
             "rating": rating,
@@ -329,14 +344,16 @@ def attractions_popular(request):
             "website": details.get('website', ''),
             "phone": details.get('phone', ''),
             "photo_url": details.get('rating_image_url', ''),
+            "photo": photo_data
         }
+        print("result_data {} - categorie {} ".format(result_data['name'], result_data['category']))
+        if result_data['category'] in VALID_ATTRACTIONS:
+            results.append(result_data)
 
-        results.append(result_data)
-
-    # ✅ Tri par note décroissante
+    # Tri par note décroissante
     results.sort(key=lambda x: x.get('rating', 0.0), reverse=True)
-    print(results[:5])
-    # ✅ Limite du nombre de résultats
+    # print(results[:5])
+    # Limite du nombre de résultats
     return Response(results[:limit])
 
 

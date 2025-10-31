@@ -24,7 +24,7 @@ export default function AttractionCard({ attraction }: Props) {
       {/* Image */}
       <div className="relative h-44 w-full">
         <Image
-          src={attraction?.photo_url || '/placeholder.jpg'}
+          src={attraction?.photo.photo_url || '/placeholder.jpg'}
           alt={attraction?.name || ""}
           fill
           className="object-cover"

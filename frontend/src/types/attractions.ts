@@ -1,3 +1,10 @@
+type Photo = {
+  id: number;
+  caption: string;
+  photo_url?: string;
+  username?: string;
+}
+
 export type Attraction = {
   id: string; // location_id renvoyé par TripAdvisor
   name: string;
@@ -14,6 +21,7 @@ export type Attraction = {
   website?: string;
   phone?: string;
   photo_url?: string;
+  photo: Photo;
   likes?: number; // champ local éventuel si tu ajoutes un système de like
   score?: number; // champ calculé optionnel (si tu veux un score custom)
   price_level?: string

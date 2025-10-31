@@ -18,7 +18,7 @@ export const useUserSession = () => {
     }
       return res.data;
     },
-    retry: 1,
+    retry: false,
     // staleTime: 1000 * 60 * 5, // 5 minutes
     
     // onError: (err: any) => {
@@ -32,10 +32,10 @@ export const useCreateUserSession = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: { profile_type: string; country: string }): Promise<UserSession> => {
+    mutationFn: async (payload: { profile_type: string; country: string}): Promise<UserSession> => {
         console.log('params ', payload)
-      const res = await api.post('/api/users/create_session/', payload);
-      return res.data;
+        const res = await api.post('/api/users/create_session/', payload);
+        return res.data;
     },
     onSuccess: (data) => {
       queryClient.setQueryData(['userSession'], data); // mettre à jour le cache
@@ -58,7 +58,7 @@ export const useLogoutUser = () => {
       return res.data;
     },
     onSuccess: () => {
-      queryClient.removeQueries(['userSession']); // vider le cache
+      queryClient.invalidateQueries({ queryKey: ['userSession']}); // vider le cache
     //   queryClient.removeQueries()?
       toast.success('Déconnecté avec succès !');
     },

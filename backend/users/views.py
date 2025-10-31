@@ -22,6 +22,7 @@ COUNTRY_TRANSLATIONS = {
     "États-Unis": "United States",
     "Canada": "Canada",
     "Tunisie": "Tunisia",
+    "Egypte": "Egypt",
     "Sénégal": "Senegal",
     "Côte d'Ivoire": "Ivory Coast",
     "Tchad": "Chad",
@@ -38,7 +39,7 @@ def fetch_capital(country):
 
 # api_view verison of  UserProfileViewSet
 
-@api_view(['POST'])
+@api_view(['POST', 'PUT'])
 def create_session(request):
     """Create or update user session with profile"""
     # Ensure session exists
@@ -48,13 +49,22 @@ def create_session(request):
     session_key = request.session.session_key
     profile_type = request.data.get('profile_type', 'guest')
     country = request.data.get('country', 'Unknown')
-    # ⚡ fetch capital côté backend
-    capital = fetch_capital(country)
+    # On ne refait pas l'appel API si le profil existe déjà
+    profile, created = UserProfile.objects.get_or_create(session_key=session_key)
 
-    profile, _ = UserProfile.objects.update_or_create(
-        session_key=session_key,
-        defaults={'profile_type': profile_type, 'country': country, 'capital': capital}
-    )
+    if created or profile.country != country:
+        capital = fetch_capital(country)
+        profile.country = country
+        profile.capital = capital
+        profile.profile_type = profile_type
+        profile.save()
+    # ⚡ fetch capital côté backend
+    # capital = fetch_capital(country)
+
+    # profile, _ = UserProfile.objects.update_or_create(
+    #     session_key=session_key,
+    #     defaults={'profile_type': profile_type, 'country': country, 'capital': capital}
+    # )
 
     serializer = UserProfileSerializer(profile)
     print("user ", serializer.data)

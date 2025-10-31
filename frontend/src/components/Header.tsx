@@ -1,17 +1,20 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, User } from 'lucide-react';
+import { useLogoutUser, useUserSession } from '@/hooks/useUserSession';
 
 const navLinks = [
   { name: 'Home', href: '/home' },
   { name: 'Search', href: '/search'},
   { name: 'Attractions', href: '/attractions' },
-  { name: 'About', href: '/about' },
+  // { name: 'About', href: '/about' },
 ];
 
 export default function Header() {
   const [open, setOpen] = useState(false);
+  const { data: user } = useUserSession(); // <-- your hook returning user session data
+  const { mutateAsync: logout, isLoading: isLoggingOut } = useLogoutUser();
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-200">
@@ -33,7 +36,42 @@ export default function Header() {
               </Link>
             </li>
           ))}
+
+          {/* User Profile */}
+          {user ? (
+            <li className="flex items-center space-x-3 border-l pl-4 border-gray-300">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 flex items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold">
+                  <User size={18} />
+                </div>
+                <div className="flex flex-col leading-tight">
+                  <span className="font-semibold text-gray-800">{user.profile_type}</span>
+                  {user.country && (
+                    <span className="text-sm text-gray-500">{user.country}</span>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => logout()}
+                disabled={isLoggingOut}
+                className="ml-4 px-3 py-1.5 text-sm font-medium bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition"
+              >
+                {isLoggingOut ? '...' : 'Logout'}
+              </button>
+            </li>
+          ) : (
+            <li>
+              <Link
+                href="/"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              >
+                Login
+              </Link>
+            </li>
+          )}
+
         </ul>
+        
 
         {/* Mobile Menu Button */}
         <button
@@ -59,6 +97,44 @@ export default function Header() {
                 </Link>
               </li>
             ))}
+
+            {/* Mobile User Section */}
+            {user ? (
+              <li className="pt-3 border-t border-gray-200">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 flex items-center justify-center rounded-full bg-blue-100 text-blue-700 font-semibold">
+                    <User size={18} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-gray-800">{user.profile_type}</span>
+                    {user.country && (
+                      <span className="text-sm text-gray-500">{user.country}</span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    logout();
+                    setOpen(false);
+                  }}
+                  disabled={isLoggingOut}
+                  className="mt-3 w-full py-2 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition"
+                >
+                  {isLoggingOut ? '...' : 'Logout'}
+                </button>
+              </li>
+            ) : (
+              <li>
+                <Link
+                  href="/"
+                  onClick={() => setOpen(false)}
+                  className="block w-full text-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  Login
+                </Link>
+              </li>
+            )}
+
           </ul>
         </div>
       )}

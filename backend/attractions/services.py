@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 class TripAdvisorService:
     BASE_URL = settings.TRIPADVISOR_API_URL
     API_KEY = os.getenv("TRIPADVISOR_API_KEY")
+
+    VALID_CATEGORIES = ["hotel", "attraction", "restaurant", "geographic"]
     
     def __init__(self):
         self.headers = {
@@ -37,7 +39,42 @@ class TripAdvisorService:
             logger.error(f"TripAdvisor API Error: {e}")
             return None
     
-    def search_location(self, query: str, category: str = None) -> List[Dict]:
+    def search_locations_by_country(self, country_name: str, limit):
+        """Return all TripAdvisor locations in a given country"""
+        search_results = []
+        page_offset = 0
+        while True:
+            try:
+                response = self.search_location(
+                    query=country_name,
+                    category=None,  # None to include all categories
+                    # limit=limit,       # max per page if supported
+                    # offset=page_offset,
+                    # language="fr"
+                )
+            except Exception as e:
+                print(f"TripAdvisor API Error: {e}")
+                break
+
+            if not response or "data" not in response or len(response["data"]) == 0:
+                break
+
+            # Filter by country in address_obj
+            filtered = [
+                item for item in response["data"]
+                if item.get("address_obj", {}).get("country") == country_name
+                and item.get("category", {}).get("name") in self.VALID_CATEGORIES
+            ]
+            search_results.extend(filtered)
+
+            # Pagination check
+            if len(response["data"]) < 50:
+                break
+            page_offset += 50
+
+        return search_results
+
+    def search_location(self, query: str, category: str = None, country: str = None) -> List[Dict]:
         """Search for locations"""
         params = {
             'searchQuery': query,
@@ -45,9 +82,12 @@ class TripAdvisorService:
         }
         if category:
             params['category'] = category
+        if country:
+            params['address'] = country
+        print("params ", params)
         
         data = self._make_request('location/search', params)
-        print("Search Location Data:", data)
+        # print("Search Location Data:", data)
         return data.get('data', []) if data else []
     
     def sync_single_attraction(self, location_id):
@@ -87,27 +127,66 @@ class TripAdvisorService:
             defaults=defaults
         )
         return attraction
-
     
+    def get_location_photos(self, location_id: int) -> Optional[Dict[str, str]]:
+        """
+        Fetch photos for a TripAdvisor location and return in a simplified format for carousel.
+
+        Args:
+            location_id (int): TripAdvisor location ID
+        Returns:
+            List[Dict]: List of photo dicts, each containing:
+                - id
+                - caption
+                - photo_url (medium or original image)
+                - username
+        """
+        params = {
+            # 'locationId': location_id,
+            'language': 'fr'
+        }
+
+        print("get photos {} params {}".format(location_id, params))
+        try:
+            response = self._make_request(f"location/{location_id}/photos", params)
+            # response.raise_for_status()
+            data = response.get('data', [])
+
+            if not data:
+                return None
+
+            photo_item = data[0]
+            # print("tof item ",photo_item)
+            images = photo_item.get("images", {})
+            photo_url = (
+                images.get("medium", {}).get("url") or
+                images.get("original", {}).get("url") or
+                images.get("small", {}).get("url") or ""
+            )
+
+            return {
+                "photo_url": photo_url,
+                "caption": photo_item.get("caption") or "",
+                "username": photo_item.get("user", {}).get("username") or "",
+            }
+
+        except Exception as e:
+            print(f"TripAdvisor API Error: {e}")
+            return None
+
+
     def get_location_details(self, location_id: str) -> Optional[Dict]:
         """Get detailed information about a location"""
-        # data = self._make_request(f'location/{location_id}/details', {
-        #     'language': 'fr',
-        #     'currency': 'EUR'
-        # })
-        # return data
-        return self._make_request(
-            f"location/{location_id}/details",
-            {"language": "fr", "currency": "EUR"}
-        )
-    
-    def get_location_photos(self, location_id: str, limit: int = 10) -> List[Dict]:
-        """Get photos for a location"""
-        data = self._make_request(f'location/{location_id}/photos', {
+        data = self._make_request(f'location/{location_id}/details', {
             'language': 'fr',
-            'limit': limit
+            'currency': 'EUR'
         })
-        return data.get('data', []) if data else []
+        print("Location id {} \n infos \n".format(location_id, data))
+        return data
+        # return self._make_request(
+        #     f"location/{location_id}/details",
+        #     {"language": "fr", "currency": "EUR"}
+        # )
     
     def get_location_reviews(self, location_id: str, limit: int = 10) -> List[Dict]:
         """Get reviews for a location"""

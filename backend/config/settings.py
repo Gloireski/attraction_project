@@ -165,3 +165,10 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# settings.py
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # (par défaut)
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 jours
+SESSION_SAVE_EVERY_REQUEST = True       # rafraîchit la session à chaque requête
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False # garder après fermeture du navigateur

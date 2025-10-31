@@ -18,11 +18,6 @@ export default function LandingPage() {
     if (!role || !country) return;
 
     try {
-      // // ⚡ Charger la capitale avant de créer la session
-      // const { data: countryInfo } = await useCountryCapital.fetchCapital(country);
-      // const capital = countryInfo?.capital;
-      // console.log("Capital: ", capital)
-
       // ⚡ Créer la session avec capitale incluse
       await createSession({ 
         profile_type: role, 
