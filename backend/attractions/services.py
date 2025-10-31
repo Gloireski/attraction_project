@@ -3,11 +3,17 @@ from config import settings
 from typing import Dict, List, Optional
 import logging
 from .models import Attraction
+import os
+from dotenv import load_dotenv
+
+# Charger le fichier .env
+load_dotenv()
+
 logger = logging.getLogger(__name__)
 
 class TripAdvisorService:
     BASE_URL = settings.TRIPADVISOR_API_URL
-    API_KEY = settings.TRIPADVISOR_API_KEY
+    API_KEY = os.getenv("TRIPADVISOR_API_KEY")
     
     def __init__(self):
         self.headers = {
@@ -22,7 +28,7 @@ class TripAdvisorService:
         params['key'] = self.API_KEY
         
         url = f"{self.BASE_URL}/{endpoint}"
-        
+        # print("url:", url)
         try:
             response = requests.get(url, headers=self.headers, params=params)
             response.raise_for_status()

@@ -1,90 +1,60 @@
 'use client';
 
-import { motion, useMotionValue, useTransform } from 'framer-motion';
-import Image from 'next/image';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import type { Attraction } from '@/types/attractions';
-import { useRef } from 'react';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import { motion } from 'framer-motion';
 
-type Props = {
-  attraction: Attraction;
-  onSelect?: (id: string | number) => void;
-};
+// Fix icône par défaut Leaflet
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png',
+});
 
-export default function AttractionCard({ attraction, onSelect }: Props) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
+type Props = { attractions: Attraction[]; onSelect?: (id: string | number) => void };
 
-  // Rotation en fonction de la position de la souris
-  const rotateX = useTransform(y, [-100, 100], [15, -15]);
-  const rotateY = useTransform(x, [-100, 100], [-15, 15]);
+export default function AttractionsMap({ attractions, onSelect }: Props) {
+  if (!attractions || attractions.length === 0) return null;
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const rect = cardRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const offsetX = e.clientX - rect.left - rect.width / 2;
-    const offsetY = e.clientY - rect.top - rect.height / 2;
-    x.set(offsetX);
-    y.set(offsetY);
-  };
+  // Filtrer les attractions avec coords valides
+  const validAttractions = attractions.filter(a => a.latitude && a.longitude);
 
-  const handleMouseLeave = () => {
-    x.set(0);
-    y.set(0);
-  };
+  // Centrer la carte sur la première attraction
+  const center: [number, number] = [
+    validAttractions[0].latitude,
+    validAttractions[0].longitude,
+  ];
 
   return (
-    <motion.div
-      ref={cardRef}
-      className="bg-white shadow-md hover:shadow-2xl transition-all rounded-2xl overflow-hidden border border-gray-100 cursor-pointer transform-gpu"
-      style={{ rotateX, rotateY }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      onClick={() => onSelect?.(attraction.id)}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.97 }}
-    >
-      {/* Image */}
-      <div className="relative h-44 w-full">
-        <Image
-          src={attraction?.photo_url || '/placeholder.jpg'}
-          alt={attraction?.name}
-          fill
-          className="object-cover transition-transform duration-500 hover:scale-110"
-        />
-        <div className="absolute top-2 right-2 bg-white/80 backdrop-blur-sm text-sm font-medium px-2 py-1 rounded-lg">
-          ⭐ {attraction?.score || 'N/A'}
-        </div>
-      </div>
+    <MapContainer center={center} zoom={6} scrollWheelZoom={true} className="my-6 h-96 w-full">
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
 
-      {/* Content */}
-      <div className="p-4 flex flex-col justify-between h-40">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-800 mb-1 truncate">
-            {attraction?.name}
-          </h3>
-          <p className="text-gray-500 text-sm line-clamp-2">
-            {attraction?.address || 'Adresse inconnue'}
-          </p>
-        </div>
-
-        <div className="mt-3 flex justify-between items-center">
-          <span className="text-sm font-medium text-primary">
-            {attraction?.likes ?? 0} ❤️
-          </span>
-          <motion.button
-            className="text-sm font-medium text-white bg-primary px-3 py-1 rounded-lg hover:bg-blue-700 transition"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect?.(attraction.id);
-            }}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            Voir plus
-          </motion.button>
-        </div>
-      </div>
-    </motion.div>
+      {validAttractions.map((a) => (
+        <Marker key={a.id} position={[a.latitude, a.longitude]}>
+          <Popup>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileHover={{ scale: 1.05 }}
+              className="p-2 w-64"
+              onClick={() => onSelect?.(a.id)}
+            >
+              <h3 className="text-lg font-semibold">{a.name}</h3>
+              <p className="text-sm text-gray-600 line-clamp-2">{a.address || a.city}</p>
+              <div className="mt-1 flex justify-between items-center">
+                <span className="text-sm font-medium text-primary">⭐ {a.num_reviews}</span>
+                <span className="text-sm font-medium text-red-500">❤️ {a.rating ?? 0}</span>
+              </div>
+            </motion.div>
+          </Popup>
+        </Marker>
+      ))}
+    </MapContainer>
   );
 }

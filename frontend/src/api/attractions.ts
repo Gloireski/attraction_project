@@ -5,6 +5,7 @@ const serverUrl = "http://127.0.0.1:8000"
 
 const api = axios.create({
   baseURL: serverUrl,
+  withCredentials: true
 });
 
 export const attractionsApi = {
@@ -28,3 +29,6 @@ export const attractionsApi = {
     return res.data;
   },
 };
+ 
+
+export default api;

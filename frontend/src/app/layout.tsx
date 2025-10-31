@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import ReactQueryProvider from "@/context/QueryClientProvider";
+import { Providers } from "@/Providers";
 import Header from "@/components/Header"
 import Footer from "@/components/Footer"
 
@@ -30,11 +30,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ReactQueryProvider>
-          <Header/>
+        <Providers>
+          <Header />
           {children}
-          <Footer/>
-        </ReactQueryProvider>
+          <Footer />
+        </Providers>
       </body>
     </html>
   );

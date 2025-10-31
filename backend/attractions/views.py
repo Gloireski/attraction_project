@@ -265,56 +265,135 @@ def attraction_detail(request, pk):
 
 @api_view(['GET'])
 def attractions_popular(request):
-    country = request.GET.get('country')
-    print("Country filter:", country)
+    country_query = request.GET.get('country')
+    print("Country filter:", country_query)
     limit = int(request.GET.get('limit', 10))
 
+    service = TripAdvisorService()
+    query = country_query if country_query else 'World'
+
+    # Recherche des locations via TripAdvisor
+    search_results = service.search_location(query=query, category="attractions")
+    results = []
+
+    for result in search_results:
+        address_obj = result.get('address_obj', {})
+        country_name = address_obj.get('country', '').strip()
+
+        # Filtrer uniquement les résultats correspondant au pays demandé
+        if not country_name or (country_query and country_name.lower() != country_query.lower()):
+            continue
+
+        location_id = result.get('location_id')
+        details = service.get_location_details(location_id)
+        if not details:
+            continue
+
+        city = address_obj.get('city', '').strip()
+        address = address_obj.get('address_string', '').strip()
+
+        # ✅ Fallback : si l’adresse est vide, on construit une version basique
+        if not address:
+            parts = [part for part in [city, country_name] if part]
+            address = ", ".join(parts) if parts else country_name
+
+        # Conversion sécurisée des champs numériques
+        try:
+            rating = float(details.get('rating', 0) or 0)
+        except (ValueError, TypeError):
+            rating = 0.0
+
+        try:
+            num_reviews = int(details.get('num_reviews') or 0)
+        except (ValueError, TypeError):
+            num_reviews = 0
+
+        try:
+            photo_count = int(details.get('photo_count') or 0)
+        except (ValueError, TypeError):
+            photo_count = 0
+
+        result_data = {
+            "id": location_id,
+            "name": details.get('name', ''),
+            "description": details.get('description', ''),
+            "city": city,
+            "country": country_name,
+            "address": address,  # ✅ avec fallback automatique
+            "latitude": float(details.get('latitude') or 0.0),
+            "longitude": float(details.get('longitude') or 0.0),
+            "rating": rating,
+            "num_reviews": num_reviews,
+            "photo_count": photo_count,
+            "category": details.get('category', {})["name"],
+            "website": details.get('website', ''),
+            "phone": details.get('phone', ''),
+            "photo_url": details.get('rating_image_url', ''),
+        }
+
+        results.append(result_data)
+
+    # ✅ Tri par note décroissante
+    results.sort(key=lambda x: x.get('rating', 0.0), reverse=True)
+    print(results[:5])
+    # ✅ Limite du nombre de résultats
+    return Response(results[:limit])
+
+
+    # country = request.GET.get('country')
+    # print("Country filter:", country)
+    # limit = int(request.GET.get('limit', 10))
+
     
-    # If local DB is empty, fetch from TripAdvisor
-    local_qs = Attraction.objects.filter(country=country)
-    if not local_qs.exists():
-        service = TripAdvisorService()
-        # You can define a default query or country
-        query = country if country else 'World'
-        results = service.search_location(query=query)
+    # # If local DB is empty, fetch from TripAdvisor
+    # local_qs = Attraction.objects.filter(country=country)
+    # if not local_qs.exists():
+    #     service = TripAdvisorService()
+    #     # You can define a default query or country
+    #     query = country if country else 'World'
+    #     results = service.search_location(query=query)
         
-        for result in results:
-            location_id = result.get('location_id')
-            details = service.get_location_details(location_id)
-            if details:
-                # Extract coordinates safely
-                latitude = details.get('latitude') or 0.0
-                longitude = details.get('longitude') or 0.0
+    #     for result in results:
+    #         location_id = result.get('location_id')
+    #         details = service.get_location_details(location_id)
+    #         if not details:
+    #             continue
 
-                Attraction.objects.update_or_create(
-                    tripadvisor_id=location_id,
-                    defaults={
-                        'name': details.get('name', ''),
-                        'description': details.get('description', ''),
-                        'city': result.get('address_obj', {}).get('city', ''),
-                        'country': result.get('address_obj', {}).get('country', ''),
-                        'latitude': latitude,
-                        'longitude': longitude,
-                        'rating': details.get('rating', 0),
-                        'num_reviews': details.get('num_reviews', 0),
-                        'photo_count': details.get('photo_count', 0),
-                        'category': details.get('category', ''),
-                        'website': details.get('website', ''),
-                        'phone': details.get('phone', ''),
-                        'photo_url': details.get('rating_image_url', ''),
-                        # add other fields
-                    }
-                )
+    #         address_obj = result.get('address_obj', {})
+    #         city = address_obj.get('city') or ''
+    #         country_name = address_obj.get('country') or country or ''
 
+    #         latitude = details.get('latitude') or 0.0
+    #         longitude = details.get('longitude') or 0.0
 
-    # Now fetch popular attractions from local DB
-    queryset = Attraction.objects.all()
-    if country:
-        queryset = queryset.filter(country=country)
+    #         Attraction.objects.update_or_create(
+    #             tripadvisor_id=location_id,
+    #             defaults={
+    #                 'name': details.get('name', ''),
+    #                 'description': details.get('description', ''),
+    #                 'city': city,
+    #                 'country': country_name,
+    #                 'latitude': latitude,
+    #                 'longitude': longitude,
+    #                 'rating': details.get('rating', 0),
+    #                 'num_reviews': details.get('num_reviews', 0),
+    #                 'photo_count': details.get('photo_count', 0),
+    #                 'category': details.get('category', ''),
+    #                 'website': details.get('website', ''),
+    #                 'phone': details.get('phone', ''),
+    #                 'photo_url': details.get('rating_image_url', ''),
+    #             }
+    #         )
+    # for a in Attraction.objects.all():
+    #     print(a.name, a.city, a.country)
+    # # Now fetch popular attractions from local DB
+    # queryset = Attraction.objects.all()
+    # if country:
+    #     queryset = queryset.filter(country=country)
     
-    queryset = queryset.order_by('-likes_count', '-rating')[:limit]
-    serializer = AttractionListSerializer(queryset, many=True)
-    return Response(serializer.data)
+    # queryset = queryset.order_by('-likes_count', '-rating')[:limit]
+    # serializer = AttractionListSerializer(queryset, many=True)
+    # return Response(serializer.data)
 
 @api_view(['POST'])
 def attraction_like(request, pk):

@@ -5,8 +5,10 @@ import { useQuery } from '@tanstack/react-query';
 import { attractionsApi } from '@/api/attractions';
 import AttractionsCarousel from '@/components/AttractionsCarousel';
 import AttractionsMap from '@/components/AttractionsMap';
+import { useSelectedAttractions } from '@/context/SelectedAttractionsContext';
 
 export default function HomePage() {
+  const { selectedAttractions, clearAttractions } = useSelectedAttractions();
   const searchParams = useSearchParams();
   const country = searchParams.get('country') || 'Morocco';
 
@@ -25,9 +27,28 @@ export default function HomePage() {
         <p>Chargement...</p>
       ) : (
         <>
-          <AttractionsCarousel attractions={data || []} />
-          <AttractionsMap attractions={data || []} />
+          <AttractionsCarousel 
+            attractions={data || []} 
+          />
+          <AttractionsMap 
+            attractions={data || []} 
+            onSelect={(id) => console.log('Attraction sélectionnée:', id)}
+           />
         </>
+      )}
+      {selectedAttractions.length > 0 && (
+        <div className="mt-10">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold text-gray-800">Mes sélections</h2>
+            <button
+              onClick={clearAttractions}
+              className="text-sm font-bold text-red-600 hover:underline"
+            >
+              Vider la liste
+            </button>
+          </div>
+          <AttractionsCarousel attractions={selectedAttractions} />
+        </div>
       )}
     </div>
   );
