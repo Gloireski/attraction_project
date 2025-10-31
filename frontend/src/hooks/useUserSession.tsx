@@ -11,10 +11,16 @@ export const useUserSession = () => {
     queryKey: ['userSession'],
     queryFn: async (): Promise<UserSession> => {
       const res = await api.get('/api/users/get_session/');
+      console.log("get session attempt", res.status)
+
+     if (!res.statusText) {
+      throw new Error('Network response was not ok')
+    }
       return res.data;
     },
     retry: 1,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    // staleTime: 1000 * 60 * 5, // 5 minutes
+    
     // onError: (err: any) => {
     //   console.error('Erreur récupération session:', err);
     // },
@@ -27,7 +33,7 @@ export const useCreateUserSession = () => {
 
   return useMutation({
     mutationFn: async (payload: { profile_type: string; country: string }): Promise<UserSession> => {
-        // console.log('params ', profile_type)
+        console.log('params ', payload)
       const res = await api.post('/api/users/create_session/', payload);
       return res.data;
     },

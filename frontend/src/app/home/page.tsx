@@ -4,7 +4,11 @@ import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { attractionsApi } from '@/api/attractions';
 import AttractionsCarousel from '@/components/AttractionsCarousel';
-import AttractionsMap from '@/components/AttractionsMap';
+// 🟢 Import dynamique : évite le rendu SSR pour Leaflet
+import dynamic from 'next/dynamic';
+const AttractionsMap = dynamic(() => import('@/components/AttractionsMap'), {
+  ssr: false,
+});
 import { useSelectedAttractions } from '@/context/SelectedAttractionsContext';
 
 export default function HomePage() {

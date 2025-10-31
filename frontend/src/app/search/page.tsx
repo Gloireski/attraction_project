@@ -4,23 +4,30 @@ import { useState } from 'react';
 import { useUserSession } from '@/hooks/useUserSession';
 import { useSearchAttractions } from '@/hooks/useSearchAttractions';
 import AttractionsCarousel from '@/components/AttractionsCarousel';
-import AttractionsMap from '@/components/AttractionsMap';
+// import AttractionsMap from '@/components/AttractionsMap';
+// 🟢 Import dynamique : évite le rendu SSR pour Leaflet
+// import { useCountryCapital } from '@/hooks/useCountryCapital';
+import dynamic from 'next/dynamic';
+const AttractionsMap = dynamic(() => import('@/components/AttractionsMap'), {
+  ssr: false,
+});
 import FiltersPanel from '@/components/FiltersPanel';
-import { data } from 'framer-motion/m';
 
 export default function SearchPage() {
   const { data: userSession } = useUserSession();
-  console.log(data)
-  const defaultCity = userSession?.country === 'Maroc' ? 'Rabat' : 'Paris'; // exemple
+  console.log(userSession)
+//   const {data} = useCountryCapital(userSession?.country)
+  const defaultCity ='Paris'; // exemple
   const [filters, setFilters] = useState({
-    country: userSession?.country || 'Maroc',
-    city: defaultCity,
+    country: userSession?.country || 'France',
+    city: userSession?.capital || defaultCity,
     category: '',
     minReviews: 0,
     minPhotos: 0,
     priceLevel: undefined,
   });
 
+  console.log("filtres ", filters)
   const { data: attractions, isLoading } = useSearchAttractions(filters);
 
   return (

@@ -11,6 +11,7 @@ class UserProfile(models.Model):
     session_key = models.CharField(max_length=255, unique=True)
     profile_type = models.CharField(max_length=20, choices=PROFILE_TYPES)
     country = models.CharField(max_length=100)
+    capital = models.CharField(max_length=100, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

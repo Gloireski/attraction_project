@@ -8,8 +8,33 @@ from .models import UserProfile
 from .serializers import UserProfileSerializer
 from rest_framework.decorators import api_view
 from rest_framework import status
+
+import requests
 # from users.utils import get_user_profile
 
+
+COUNTRY_TRANSLATIONS = {
+    "Maroc": "Morocco",
+    "France": "France",
+    "Espagne": "Spain",
+    "Italie": "Italy",
+    "Allemagne": "Germany",
+    "États-Unis": "United States",
+    "Canada": "Canada",
+    "Tunisie": "Tunisia",
+    "Sénégal": "Senegal",
+    "Côte d'Ivoire": "Ivory Coast",
+    "Tchad": "Chad",
+}
+
+def get_english_country_name(country):
+    return COUNTRY_TRANSLATIONS.get(country, country)
+
+def fetch_capital(country):
+    english_name = get_english_country_name(country)
+    res = requests.get(f"https://restcountries.com/v3.1/name/{english_name}?fullText=true")
+    data = res.json()[0]
+    return data.get("capital", ["Inconnue"])[0]
 
 # api_view verison of  UserProfileViewSet
 
@@ -23,10 +48,12 @@ def create_session(request):
     session_key = request.session.session_key
     profile_type = request.data.get('profile_type', 'guest')
     country = request.data.get('country', 'Unknown')
+    # ⚡ fetch capital côté backend
+    capital = fetch_capital(country)
 
     profile, _ = UserProfile.objects.update_or_create(
         session_key=session_key,
-        defaults={'profile_type': profile_type, 'country': country}
+        defaults={'profile_type': profile_type, 'country': country, 'capital': capital}
     )
 
     serializer = UserProfileSerializer(profile)
@@ -43,6 +70,7 @@ def get_session(request):
     try:
         profile = UserProfile.objects.get(session_key=session_key)
         serializer = UserProfileSerializer(profile)
+        print("USER PROFILE", serializer.data)
         return Response(serializer.data)
     except UserProfile.DoesNotExist:
         return Response({'detail': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
