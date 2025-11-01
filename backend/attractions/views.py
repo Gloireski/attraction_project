@@ -34,6 +34,15 @@ START_TIME = time.time()
 VALID_CATEGORIES = ["hotel", "attraction", "restaurant", "geographic"]
 VALID_ATTRACTIONS = ["hotel", "attraction", "restaurant"]
 
+def extract_opening_hours(data):
+    """Extrait proprement les horaires d'ouverture depuis la structure TripAdvisor"""
+    hours = None
+    try:
+        hours = data.get("hours", {}).get("weekday_text", None)
+    except Exception as e:
+        print("Erreur extraction horaires :", e)
+    return hours
+
 def filter_by_radius(queryset, lat, lng, radius):
     """Filter attractions within radius using Haversine formula"""
     def haversine(lon1, lat1, lon2, lat2):
@@ -222,6 +231,111 @@ def attractions_search(request):
     return Response(filterset.errors, status=400)
 
 @api_view(['GET'])
+def attractions_search_default(request):
+    "Get default data for researchpage"
+    country_query = request.GET.get('country')
+    capital_query = request.GET.get('capital')
+    profile_type_query = request.GET.get('profile_type')
+    print("Country query:", country_query)
+    limit = int(request.GET.get('limit', 10))
+    service = TripAdvisorService()
+    capital_data = service.search_location(query=capital_query, country=country_query, category="geos")[0]
+    if not capital_data:
+        return Response([])
+    capital_id = capital_data.get('location_id')
+    # print("Result D: ", capital_data)
+    print("{} - {}".format(capital_query, capital_id))
+
+    capital_infos = service.get_location_details(capital_id)
+
+    print("cap info \n", capital_infos.get("description"))
+    # attraction populaires dans la ville
+    search_results = service.search_nearby(latitude=capital_infos.get('latitude'), longitude=capital_infos.get('longitude'), address=country_query)
+    results = []
+
+    for result in search_results:
+        address_obj = result.get('address_obj', {})
+        country_name = address_obj.get('country', '').strip()
+
+        location_id = result.get('location_id')
+        details = service.get_location_details(location_id)
+        print("Location name: {}\n".format(result.get('name')))
+        photo_data = service.get_location_photos(location_id)
+        # print("photo ",photo_data)
+       
+        if not details:
+            # print(" r ",result.get('category'))
+            continue
+
+        category = details.get('category', {})["name"].lower()
+        if profile_type_query == 'local' and category == 'hotel':
+            continue
+        if profile_type_query == 'professional' and category not in ['restaurant', 'hotel']:
+            continue
+
+        city = address_obj.get('city', '').strip()
+        address = address_obj.get('address_string', '').strip()
+
+        # Fallback : si l’adresse est vide, on construit une version basique
+        if not address:
+            parts = [part for part in [city, country_name] if part]
+            address = ", ".join(parts) if parts else country_name
+
+        # Conversion sécurisée des champs numériques
+        try:
+            rating = float(details.get('rating', 0) or 0)
+        except (ValueError, TypeError):
+            rating = 0.0
+
+        try:
+            num_reviews = int(details.get('num_reviews') or 0)
+        except (ValueError, TypeError):
+            num_reviews = 0
+
+        try:
+            photo_count = int(details.get('photo_count') or 0)
+        except (ValueError, TypeError):
+            photo_count = 0
+        
+        try:
+            horaires = details.get("hours", {}).get("weekday_text", None)
+        except (ValueError, TypeError):
+            horaires = ""
+        
+        print("Horaires \n", horaires)
+            
+        result_data = {
+            "id": location_id,
+            "name": details.get('name', ''),
+            "description": details.get('description', ''),
+            "city": city,
+            "country": country_name,
+            "address": address,  # avec fallback automatique
+            "latitude": float(details.get('latitude') or 0.0),
+            "longitude": float(details.get('longitude') or 0.0),
+            "rating": rating,
+            "num_reviews": num_reviews,
+            "photo_count": photo_count,
+            "category": details.get('category', {})["name"],
+            "website": details.get('website', ''),
+            "phone": details.get('phone', ''),
+            "rating_image_url": details.get('rating_image_url', ''),
+            "photo": photo_data,
+            "price_level": details.get('price_level', ''),
+            "horaires": horaires
+
+        }
+        # print("result_data {} - categorie {} ".format(result_data['name'], result_data['category']))
+        if result_data['category'] in VALID_ATTRACTIONS:
+            results.append(result_data)
+
+    # Tri par note décroissante
+    results.sort(key=lambda x: x.get('rating', 0.0), reverse=True)
+    # print(results[:5])
+    # Limite du nombre de résultats
+    return Response(results)
+
+@api_view(['GET'])
 def attraction_detail(request, pk):
     """
     Get detailed information about a specific attraction.
@@ -270,7 +384,7 @@ def attraction_detail(request, pk):
 def attractions_popular(request):
     country_query = request.GET.get('country')
     print("Country query:", country_query)
-    limit = int(request.GET.get('limit', 5))
+    limit = int(request.GET.get('limit', 10))
 
     service = TripAdvisorService()
     query = country_query if country_query else 'World'
@@ -287,19 +401,16 @@ def attractions_popular(request):
 
         # Filtrer uniquement les résultats correspondant au pays demandé
         # if not country_name or (country_query and country_name.lower() != country_query.lower()):
-            # continue
+        #     continue
+
+        
 
         location_id = result.get('location_id')
         details = service.get_location_details(location_id)
+        print("Location name: {}\n".format(result.get('name')))
         photo_data = service.get_location_photos(location_id)
-        print("photo ",photo_data)
-        # if photo_data:  # photo_data is a dict, not a list
-        #     print("photo url:", photo_data['photo_url'])
-        #     print("caption:", photo_data['caption'])
-        #     print("username:", photo_data['username'])
-        # else:
-        #     print("No photo found")
-        # print(photo_data["photo_url"], photo_data["caption"])
+        # print("photo ",photo_data)
+       
         if not details:
             # print(" r ",result.get('category'))
             continue
@@ -327,6 +438,13 @@ def attractions_popular(request):
             photo_count = int(details.get('photo_count') or 0)
         except (ValueError, TypeError):
             photo_count = 0
+        
+        try:
+            horaires = details.get("hours", {}).get("weekday_text", None)
+        except (ValueError, TypeError):
+            horaires = ""
+        
+        print("Horaires \n", horaires)
             
         result_data = {
             "id": location_id,
@@ -343,10 +461,13 @@ def attractions_popular(request):
             "category": details.get('category', {})["name"],
             "website": details.get('website', ''),
             "phone": details.get('phone', ''),
-            "photo_url": details.get('rating_image_url', ''),
-            "photo": photo_data
+            "rating_image_url": details.get('rating_image_url', ''),
+            "photo": photo_data,
+            "price_level": details.get('price_level', ''),
+            "horaires": horaires
+
         }
-        print("result_data {} - categorie {} ".format(result_data['name'], result_data['category']))
+        # print("result_data {} - categorie {} ".format(result_data['name'], result_data['category']))
         if result_data['category'] in VALID_ATTRACTIONS:
             results.append(result_data)
 

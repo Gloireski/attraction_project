@@ -26,6 +26,7 @@ COUNTRY_TRANSLATIONS = {
     "Sénégal": "Senegal",
     "Côte d'Ivoire": "Ivory Coast",
     "Tchad": "Chad",
+    "Afrique du sud": "South Africa",
 }
 
 def get_english_country_name(country):
@@ -35,6 +36,7 @@ def fetch_capital(country):
     english_name = get_english_country_name(country)
     res = requests.get(f"https://restcountries.com/v3.1/name/{english_name}?fullText=true")
     data = res.json()[0]
+    print(data)
     return data.get("capital", ["Inconnue"])[0]
 
 # api_view verison of  UserProfileViewSet

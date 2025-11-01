@@ -10,11 +10,31 @@ const AttractionsMap = dynamic(() => import('@/components/AttractionsMap'), {
   ssr: false,
 });
 import { useSelectedAttractions } from '@/context/SelectedAttractionsContext';
+import { useUserSession, useCreateUserSession } from '@/hooks/useUserSession';
+import { useEffect } from 'react';
 
 export default function HomePage() {
   const { selectedAttractions, clearAttractions } = useSelectedAttractions();
+  // const { data: user, isError } = useUserSession()
   const searchParams = useSearchParams();
-  const country = searchParams.get('country') || 'Morocco';
+  // const country = searchParams.get('country') || 'Morocco';
+
+  const { data: user, isError, isLoading: sessionLoading } = useUserSession();
+  const createSession = useCreateUserSession();
+
+  //Si aucune session n'existe, on en crée une par défaut
+  useEffect(() => {
+    if (isError) {
+      console.log('Aucune session trouvée, création en cours...');
+      createSession.mutate({ profile_type: 'guest', country: 'Kenya' });
+    }
+  }, [isError, createSession]);
+
+  // ✅ Déterminer le pays à partir de la session ou du paramètre URL
+  const country =
+    searchParams.get('country') ||
+    user?.country ||
+    'Morocco';
 
   const { data, isLoading } = useQuery({
     queryKey: ['popularAttractions', country],
@@ -24,7 +44,7 @@ export default function HomePage() {
   return (
     <div className="px-6 py-10">
       <h1 className="text-3xl font-bold text-primary mb-6">
-        Les attractions populaires au {country}
+        Les attractions populaires: {country}
       </h1>
 
       {isLoading ? (

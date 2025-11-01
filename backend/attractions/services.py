@@ -146,7 +146,7 @@ class TripAdvisorService:
             'language': 'fr'
         }
 
-        print("get photos {} params {}".format(location_id, params))
+        # print("get photos {} params {}".format(location_id, params))
         try:
             response = self._make_request(f"location/{location_id}/photos", params)
             # response.raise_for_status()
@@ -181,7 +181,8 @@ class TripAdvisorService:
             'language': 'fr',
             'currency': 'EUR'
         })
-        print("Location id {} \n infos \n".format(location_id, data))
+        print("data attempt :",data)
+        # print("Location id {} \n infos \n:".format(location_id, data))
         return data
         # return self._make_request(
         #     f"location/{location_id}/details",
@@ -196,7 +197,7 @@ class TripAdvisorService:
         })
         return data.get('data', []) if data else []
     
-    def search_nearby(self, latitude: float, longitude: float, category: str = None, radius: int = 10) -> List[Dict]:
+    def search_nearby(self, latitude: float, longitude: float, address: str = None, radius: int = 10) -> List[Dict]:
         """Search for nearby locations"""
         params = {
             'latLong': f"{latitude},{longitude}",
@@ -205,8 +206,8 @@ class TripAdvisorService:
             'language': 'fr'
         }
         print("Searching nearby with params:", params.values())
-        if category:
-            params['category'] = category
+        if address:
+            params['address'] = address
         
         data = self._make_request('location/nearby_search', params)
         return data.get('data', []) if data else []

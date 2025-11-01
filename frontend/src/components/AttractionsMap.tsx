@@ -24,8 +24,8 @@ export default function AttractionsMap({ attractions, onSelect }: Props) {
 
   // Centrer la carte sur la première attraction
   const center: [number, number] = [
-    validAttractions[0].latitude,
-    validAttractions[0].longitude,
+    validAttractions[0]?.latitude,
+    validAttractions[0]?.longitude,
   ];
 
   return (

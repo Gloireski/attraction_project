@@ -5,6 +5,17 @@ type Photo = {
   username?: string;
 }
 
+export type SearchFilters = {
+  country?: string;
+  city?: string;
+  category?: string;
+  minReviews?: number;
+  minPhotos?: number;
+  priceLevel?: string;
+  openNow?: boolean; // pour filtrer les attractions actuellement ouvertes
+};
+
+
 export type Attraction = {
   id: string; // location_id renvoyé par TripAdvisor
   name: string;
@@ -20,9 +31,11 @@ export type Attraction = {
   category?: string; // ✅ l'API renvoie parfois un objet pour category
   website?: string;
   phone?: string;
-  photo_url?: string;
+  rating_image_url?: string;
   photo: Photo;
   likes?: number; // champ local éventuel si tu ajoutes un système de like
   score?: number; // champ calculé optionnel (si tu veux un score custom)
-  price_level?: string
+  price_level?: string;
+  horaires?: string[]
+  
 };

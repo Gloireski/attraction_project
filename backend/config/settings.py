@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "django_filters",
     "corsheaders",
     "drf_spectacular",
+    
     # Local apps
     "attractions",
     "users",
@@ -87,6 +88,18 @@ CORS_ALLOW_HEADERS = [
     "x-csrftoken",
     "x-requested-with",
 ]
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 jours
+SESSION_SAVE_EVERY_REQUEST = True  # prolonge la durée à chaque requête
+
+SESSION_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SECURE = False  # mettre True en prod (HTTPS)
+
+# CSRF pour les requêtes avec credentials
+CSRF_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SECURE = False
 
 ROOT_URLCONF = "config.urls"
 
@@ -166,9 +179,4 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# settings.py
 
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # (par défaut)
-SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 jours
-SESSION_SAVE_EVERY_REQUEST = True       # rafraîchit la session à chaque requête
-SESSION_EXPIRE_AT_BROWSER_CLOSE = False # garder après fermeture du navigateur

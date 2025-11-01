@@ -3,7 +3,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
 from .views import home, get_attractions, get_location_details, get_categories, AttractionViewSet, sync_from_tripadvisor
-from .views import attractions_popular, attractions_search, attractions_list, attraction_detail
+from .views import attractions_popular, attractions_search, attractions_list, attraction_detail, attractions_search_default
 
 # from .views import AttractionViewSet, UserProfileViewSet, CompilationViewSet
 
@@ -20,6 +20,7 @@ urlpatterns = [
     path('attractions_v1/popular/', attractions_popular, name='attractions-popular'),
     path('attractions_v1/list/', attractions_list, name='attractions-list'),
     path('attractions_v1/search/', attractions_search, name='attractions-search'),
+    path('attractions_v1/search_default/', attractions_search_default, name='attractions-search'),
     path('attractions_v1/<int:pk>/', attraction_detail, name='attraction-detail'),
     path('attractions_v1/sync_tripadvisor/', sync_from_tripadvisor, name='sync_tripadvisor'),
     path('categories/', get_categories, name='categories'),

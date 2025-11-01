@@ -4,18 +4,23 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 import type { Attraction } from '@/types/attractions';
 import { attractionsApi } from '@/api/attractions';
+import { toast } from 'react-hot-toast'
 
 type ContextType = {
   selectedAttractions: Attraction[];
   addAttraction: (a: Attraction) => void;
   removeAttraction: (id: number) => void;
-  clearAttractions: () => void;
+  clearAttractions: () => Promise<void>;
+  compilationId: number | null;
+  loading: boolean;
 };
 
 const SelectedAttractionsContext = createContext<ContextType | undefined>(undefined);
 
 export const SelectedAttractionsProvider = ({ children }: { children: ReactNode }) => {
   const [selectedAttractions, setSelectedAttractions] = useState<Attraction[]>([]);
+  const [compilationId, setCompilationId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const addAttraction = (a: Attraction) => {
     setSelectedAttractions(prev => [...prev, a]);

@@ -3,7 +3,7 @@ type Props = {
   onChange: (country: string) => void;
 };
 
-const countries = ['Maroc', 'France', 'Sénégal', 'Kenya', 'Egypte', 'Espagne', "Côte d'Ivoire", "Tchad",];
+const countries = ['Maroc', 'France', 'Sénégal', 'Kenya', 'Egypte', 'Espagne', "Côte d'Ivoire", "Tchad", "Afrique du Sud"];
 
 export default function CountrySelector({ value, onChange }: Props) {
   return (

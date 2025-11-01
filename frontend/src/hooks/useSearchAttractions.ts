@@ -1,49 +1,35 @@
-// src/hooks/useSearchAttractions.ts
+'use client';
 import { useQuery } from '@tanstack/react-query';
-import { attractionsApi } from '@/api/attractions';
+import api from '@/api/attractions';
 import type { Attraction } from '@/types/attractions';
+import type { SearchFilters } from '@/types/search';
+// import api from '@/api/attractions';
 
-export interface AttractionFilters {
-  country: string;
-  city?: string;
-  category?: string;
-  minReviews?: number;
-  minPhotos?: number;
-  priceLevel?: number;
-  radiusKm?: number;
-  period?: string; // période d'ouverture, ex: "morning", "afternoon"
-}
+export const useSearchAttractions = (country: string, capital: string, profile_type: string) => {
+  // return useQuery({
+  //   queryKey: ['searchAttractions', filters],
+  //   queryFn: async (): Promise<Attraction[]> => {
+  //     const params: Record<string, any> = { ...filters };
+      
+  //     // Convert openNow en format attendu par l'API
+  //     if (filters.openNow !== undefined) {
+  //       params.open_now = filters.openNow ? 1 : 0;
+  //     }
 
-export const useSearchAttractions = (filters: AttractionFilters) => {
-  return useQuery<Attraction[], Error>({
-    queryKey: ['searchAttractions', filters],
-    queryFn: async () => {
-      let data = await attractionsApi.getPopular(filters.country);
-
-      // filtrage côté frontend si nécessaire
-      if (filters.city) {
-        data = data.filter(
-          (a) => a.city.toLowerCase() === filters.city!.toLowerCase()
-        );
-      }
-      if (filters.category) {
-        data = data.filter(
-          (a) => a.category?.toLowerCase() === filters.category!.toLowerCase()
-        );
-      }
-      if (filters.minReviews) {
-        data = data.filter((a) => a.num_reviews >= filters.minReviews!);
-      }
-      if (filters.minPhotos) {
-        data = data.filter((a) => a.photo_count >= filters.minPhotos!);
-      }
-      if (filters.priceLevel) {
-        data = data.filter((a) => a.price_level === filters.priceLevel);
-      }
-      // TODO: filtrage par radius et période si coordonnées disponibles
-
-      return data;
+  //     const res = await api.get('/api/attractions_v1/search/', { params });
+  //     return res.data;
+  //   },
+  //   // keepPreviousData: true,
+  //   staleTime: 1000 * 60 * 5,
+  // });
+  return useQuery({
+    queryKey: ['popularAttractionsByTAR', country, capital, profile_type],
+    queryFn: async (): Promise<Attraction[]> => {
+        const res = await api.get(`/api/attractions_v1/search_default/?country=${country}&capital=${capital}&profile_type=${profile_type}`)
+        return res.data
     },
-    staleTime: 1000 * 60 * 5,
-  });
+
+    retry: 1
+
+  })
 };

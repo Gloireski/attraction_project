@@ -8,7 +8,7 @@ const navLinks = [
   { name: 'Home', href: '/home' },
   { name: 'Search', href: '/search'},
   { name: 'Attractions', href: '/attractions' },
-  // { name: 'About', href: '/about' },
+  { name: 'Compilations', href: '/compilations' },
 ];
 
 export default function Header() {
