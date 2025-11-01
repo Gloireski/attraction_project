@@ -8,7 +8,7 @@ from .models import UserProfile
 from .serializers import UserProfileSerializer
 from rest_framework.decorators import api_view
 from rest_framework import status
-from django.views.decorators.csrf import csrf_exempt
+# from django.views.decorators.csrf import csrf_exempt
 
 import requests
 # from users.utils import get_user_profile
@@ -89,7 +89,6 @@ def get_session(request):
     except UserProfile.DoesNotExist:
         return Response({'detail': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
 
-@csrf_exempt
 @api_view(['POST'])
 def logout(request):
     """Logout user and delete associated session"""

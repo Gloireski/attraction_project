@@ -63,6 +63,7 @@ export const useCreateUserSession = () => {
 // Déconnexion utilisateur
 export const useLogoutUser = () => {
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   return useMutation({
     mutationFn: async () => {
@@ -71,6 +72,7 @@ export const useLogoutUser = () => {
     },
     onSuccess: () => {
       console.log('deconnexion')
+      router.push('/');
       queryClient.setQueryData(['userSession'], null); // <-- important
       // queryClient.invalidateQueries({ queryKey: ['userSession']}); // vider le cache
       // queryClient.refetchQueries({ queryKey: ['userSession'] }); // <-- force refetch

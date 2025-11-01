@@ -40,7 +40,7 @@ export default function AttractionPage() {
       {attraction.photo_url && (
         <div className="relative w-full h-80 rounded-xl overflow-hidden mb-6">
           <Image
-            src={attraction.photos.photo_url}
+            src={attraction.photo_url }
             alt={attraction.name}
             fill
             className="object-cover"

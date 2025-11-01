@@ -260,7 +260,8 @@ def attractions_search_default(request):
         location_id = result.get('location_id')
         details = service.get_location_details(location_id)
         print("Location name: {}\n".format(result.get('name')))
-        photo_data = service.get_location_photos(location_id)
+        photos = service.get_location_photos(location_id)
+        
         # print("photo ",photo_data)
        
         if not details:
@@ -286,7 +287,10 @@ def attractions_search_default(request):
             rating = float(details.get('rating', 0) or 0)
         except (ValueError, TypeError):
             rating = 0.0
-
+        try:
+            photo_url = photos[0].get('photo_url')
+        except (ValueError, TypeError):
+            photo_url = ""
         try:
             num_reviews = int(details.get('num_reviews') or 0)
         except (ValueError, TypeError):
@@ -320,7 +324,8 @@ def attractions_search_default(request):
             "website": details.get('website', ''),
             "phone": details.get('phone', ''),
             "rating_image_url": details.get('rating_image_url', ''),
-            "photo": photo_data,
+            "photo": photos,
+            "photo_url": photo_url,
             "price_level": details.get('price_level', ''),
             "horaires": horaires
 
@@ -360,11 +365,18 @@ def attraction_detail(request, pk):
     # print("Location name: {}\n".format(result.get('name')))
     if not details:
         return Response({"error": "Attraction not found"}, status=404)
-    photo_data = service.get_location_photos(pk) 
+    photos = service.get_location_photos(pk) 
+    # photo_url = photos[0].get('photo_url')
+    try:
+            photo_url = photos[0].get('photo_url')
+    except (ValueError, TypeError):
+            photo_url = ""
+    print("photo url\n ",photo_url)
+    print("photos \n ",photos)
      # Extract category safely
     category_info = details.get("category") or {}
     category_name = category_info.get("name", "").strip() or ""
-    defaults = {
+    attraction_data = {
             "tripadvisor_id": details.get("location_id"),
             "name": details.get("name"),
             "description": details.get("description") or "",
@@ -378,7 +390,8 @@ def attraction_detail(request, pk):
             "email": details.get("email") or "",
             "rating": float(details.get("rating") or 0),
             "num_reviews": int(details.get("num_reviews") or 0),
-            "photo_url": details.get("rating_image_url") or "",
+            "photo_url": photo_url,
+            "photos": photos,
             "photo_count": int(details.get("photo_count") or 0),
             "category": category_name,
             "opening_hours": details.get("hours") or {},
@@ -386,14 +399,15 @@ def attraction_detail(request, pk):
             "cuisine_types": details.get("cuisine") or [],
             "hotel_style": details.get("hotel_style") or [],
             "hotel_class": details.get("hotel_class") or None,
+            "nearby_attractions": []
         }
 
-    attraction = service.sync_single_attraction(location_id=pk)
-    if not attraction:
-        return Response({"error": "Attraction not found"}, status=404)
+    # attraction = service.sync_single_attraction(location_id=pk)
+    # if not attraction:
+    #     return Response({"error": "Attraction not found"}, status=404)
 
     # serializer = AttractionSerializer(attraction)
-    attraction_data = AttractionSerializer(attraction).data
+    # attraction_data = AttractionSerializer(attraction).data
         # return Response(serializer.data)
     # Fetch nearby attractions using TripAdvisor API
     latitude = attraction_data.get("latitude")
@@ -450,8 +464,6 @@ def attractions_popular(request):
         photos = service.get_location_photos(location_id)
         photo_url = photos[0].get('photo_url')
 
-        # print("photo ",photo_data)
-       
         if not details:
             # print(" r ",result.get('category'))
             continue
