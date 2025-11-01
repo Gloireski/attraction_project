@@ -7,11 +7,11 @@ import dynamic from 'next/dynamic';
 const AttractionsMap = dynamic(() => import('@/components/AttractionsMap'), { ssr: false });
 import FiltersPanel from '@/components/FiltersPanel';
 import type { SearchFilters } from '@/types/search';
-import { attractionsApi } from '@/api/attractions';
-import { useQuery } from '@tanstack/react-query';
 
 export default function SearchPage() {
   const { data: userSession } = useUserSession();
+
+  console.log("user: ", userSession)
 
   const defaultCity = 'Paris';
   const profile_type = userSession?.profile_type || 'local'

@@ -11,7 +11,7 @@ export default function AttractionCard({ attraction }: Props) {
   const isSelected = selectedAttractions.some((a) => a.id === attraction.id);
 
   const handleToggleSelect = () => {
-    if (isSelected) removeAttraction(attraction.id);
+    if (isSelected) removeAttraction(parseInt(attraction.id));
     else addAttraction(attraction);
   };
 
@@ -24,7 +24,7 @@ export default function AttractionCard({ attraction }: Props) {
       {/* Image */}
       <div className="relative h-44 w-full">
         <Image
-          src={attraction?.photo?.photo_url || attraction?.rating_image_url || '/placeholder.jpg'}
+          src={attraction?.photo_url || attraction?.rating_image_url || '/placeholder.jpg'}
           alt={attraction?.name || ""}
           fill
           className="object-cover"

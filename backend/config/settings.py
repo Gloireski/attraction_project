@@ -61,6 +61,24 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+# Sessions
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 1  # 1 jour
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SECURE = False  # True si tu utilises HTTPS
+
+# CSRF
+CSRF_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SECURE = False
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
 CORS_ALLOW_ALL_ORIGINS = False  # Keep it strict for now
 
 CORS_ALLOWED_ORIGINS = [
@@ -70,36 +88,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 
 CORS_ALLOW_CREDENTIALS = True  # optional, if using cookies/auth
 
-CORS_ALLOW_HEADERS = [
-    "accept",
-    "accept-encoding",
-    "authorization",
-    "content-type",
-    "dnt",
-    "origin",
-    "user-agent",
-    "x-csrftoken",
-    "x-requested-with",
-]
-
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'
-
-SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 jours
-SESSION_SAVE_EVERY_REQUEST = True  # prolonge la durée à chaque requête
-
-SESSION_COOKIE_SAMESITE = "None"
-SESSION_COOKIE_SECURE = False  # mettre True en prod (HTTPS)
-
-# CSRF pour les requêtes avec credentials
-CSRF_COOKIE_SAMESITE = "None"
-CSRF_COOKIE_SECURE = False
 
 ROOT_URLCONF = "config.urls"
 

@@ -8,6 +8,7 @@ from .models import UserProfile
 from .serializers import UserProfileSerializer
 from rest_framework.decorators import api_view
 from rest_framework import status
+from django.views.decorators.csrf import csrf_exempt
 
 import requests
 # from users.utils import get_user_profile
@@ -76,6 +77,7 @@ def create_session(request):
 def get_session(request):
     """Get current user's session profile"""
     session_key = request.session.session_key
+    print("session_key {} ".format(session_key))
     if not session_key:
         return Response({'detail': 'No session found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -87,10 +89,16 @@ def get_session(request):
     except UserProfile.DoesNotExist:
         return Response({'detail': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
 
+@csrf_exempt
 @api_view(['POST'])
 def logout(request):
     """Logout user and delete associated session"""
+    print("loggin out/n")
     session_key = request.session.session_key
+    print("req ", request.session)
+    print("sessionid cookie:", request.COOKIES)
+    print("session_key:", request.session.session_key)
+
     if not session_key:
         return Response({'detail': 'No active session'}, status=status.HTTP_400_BAD_REQUEST)
     # Fetch user profile first

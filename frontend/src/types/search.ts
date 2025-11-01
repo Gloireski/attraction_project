@@ -3,6 +3,7 @@ export type SearchFilters = {
   city?: string;
   profile_type?: string;
   capital?: string;
+  categories?: string[];
   category?: string;
   minReviews?: number;
   minPhotos?: number;

@@ -1,12 +1,5 @@
-import axios from 'axios';
+import { api } from '@/lib/api';
 import type { Attraction } from '@/types/attractions';
-
-const serverUrl = "http://127.0.0.1:8000"
-
-const api = axios.create({
-  baseURL: serverUrl,
-  withCredentials: true,  // indispensable
-});
 
 export const attractionsApi = {
   getPopular: async (country: string): Promise<Attraction[]> => {

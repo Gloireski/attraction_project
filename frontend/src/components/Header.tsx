@@ -7,7 +7,7 @@ import { useLogoutUser, useUserSession } from '@/hooks/useUserSession';
 const navLinks = [
   { name: 'Home', href: '/home' },
   { name: 'Search', href: '/search'},
-  { name: 'Attractions', href: '/attractions' },
+  // { name: 'Attractions', href: '/attractions' },
   { name: 'Compilations', href: '/compilations' },
 ];
 
@@ -15,6 +15,8 @@ export default function Header() {
   const [open, setOpen] = useState(false);
   const { data: user } = useUserSession(); // <-- your hook returning user session data
   const { mutateAsync: logout, isLoading: isLoggingOut } = useLogoutUser();
+
+  console.log("session: ", user?.session_key)
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-200">

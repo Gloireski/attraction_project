@@ -1,6 +1,6 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import api from '@/api/attractions';
+import { api } from '@/lib/api'
 import type { Attraction } from '@/types/attractions';
 import type { SearchFilters } from '@/types/search';
 // import api from '@/api/attractions';
@@ -28,8 +28,9 @@ export const useSearchAttractions = (country: string, capital: string, profile_t
         const res = await api.get(`/api/attractions_v1/search_default/?country=${country}&capital=${capital}&profile_type=${profile_type}`)
         return res.data
     },
+    // staleTime: 1000 * 60 * 5, // 5 minutes
 
-    retry: 1
+    // retry: 1
 
   })
 };

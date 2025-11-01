@@ -154,22 +154,23 @@ class TripAdvisorService:
 
             if not data:
                 return None
+            photos = []
 
-            photo_item = data[0]
-            # print("tof item ",photo_item)
-            images = photo_item.get("images", {})
-            photo_url = (
-                images.get("medium", {}).get("url") or
-                images.get("original", {}).get("url") or
-                images.get("small", {}).get("url") or ""
-            )
+            for item in data:
+                images = item.get("images", {})
+                photo_url = (
+                    images.get("medium", {}).get("url") or
+                    images.get("original", {}).get("url") or
+                    images.get("small", {}).get("url") or ""
+                )
 
-            return {
-                "photo_url": photo_url,
-                "caption": photo_item.get("caption") or "",
-                "username": photo_item.get("user", {}).get("username") or "",
-            }
+                photos.append({
+                    "photo_url": photo_url,
+                    "caption": item.get("caption") or "",
+                    "username": item.get("user", {}).get("username") or "",
+                })
 
+            return photos
         except Exception as e:
             print(f"TripAdvisor API Error: {e}")
             return None
@@ -181,7 +182,7 @@ class TripAdvisorService:
             'language': 'fr',
             'currency': 'EUR'
         })
-        print("data attempt :",data)
+        # print("data attempt :",data)
         # print("Location id {} \n infos \n:".format(location_id, data))
         return data
         # return self._make_request(

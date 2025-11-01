@@ -2,24 +2,36 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
-import api from '@/api/attractions';
+import { api } from '@/lib/api';
 import type { UserSession } from '@/types/user';
+import { useRouter, usePathname } from 'next/navigation';
 
 // Récupérer la session actuelle
 export const useUserSession = () => {
+  const router = useRouter();
+  const pathname = usePathname();
+
   return useQuery({
     queryKey: ['userSession'],
     queryFn: async (): Promise<UserSession> => {
-      const res = await api.get('/api/users/get_session/');
-      console.log("get session attempt", res.status)
-
-     if (!res.statusText) {
-      throw new Error('Network response was not ok')
-    }
-      return res.data;
+    try {
+        const res = await api.get('/api/users/get_session/');
+        if (res.status !== 200) {
+          throw new Error('Session not found');
+        }
+        return res.data;
+      } catch (error: any) {
+        console.error('Erreur récupération session:', error);
+         // Rediriger seulement si on est sur "/" ou "/search"
+        if (pathname === '/home' || pathname === '/search') {
+          router.push('/'); // ou autre route si besoin
+        }
+        // router.push('/'); // redirect to home if no session
+        throw error;
+      }
     },
-    retry: false,
-    // staleTime: 1000 * 60 * 5, // 5 minutes
+    // retry: false,
+    staleTime: 1000 * 60 * 5, // 5 minutes
     
     // onError: (err: any) => {
     //   console.error('Erreur récupération session:', err);
@@ -58,7 +70,10 @@ export const useLogoutUser = () => {
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['userSession']}); // vider le cache
+      console.log('deconnexion')
+      queryClient.setQueryData(['userSession'], null); // <-- important
+      // queryClient.invalidateQueries({ queryKey: ['userSession']}); // vider le cache
+      // queryClient.refetchQueries({ queryKey: ['userSession'] }); // <-- force refetch
     //   queryClient.removeQueries()?
       toast.success('Déconnecté avec succès !');
     },
