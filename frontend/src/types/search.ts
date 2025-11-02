@@ -2,9 +2,9 @@ export type SearchFilters = {
   country?: string;
   city?: string;
   profile_type?: string;
-  capital?: string;
-  categories?: string[];
   category?: string;
+  days?: string;
+  radius: number;
   minReviews?: number;
   minPhotos?: number;
   priceLevel?: string;

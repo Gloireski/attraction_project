@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import { SearchFilters } from '@/types/search';
 import type { Attraction } from '@/types/attractions';
 
 export const attractionsApi = {
@@ -7,8 +8,16 @@ export const attractionsApi = {
     return res.data;
   },
 
-  getPopularByTypeAndRegion: async(country: string, capital: string, profile_type: string): Promise<Attraction[]> => {
-    const res = await api.get(`/api/attractions_v1/search_default/?country=${country}&capital=${capital}&profile_type=${profile_type}`)
+  getPopularByTypeAndRegion: async(country: string, profile_type: string, filters: SearchFilters): Promise<Attraction[]> => {
+    const params = new URLSearchParams({
+    country,
+    // capital,
+    profile_type,
+    ...Object.fromEntries(Object.entries(filters).map(([k, v]) => [k, String(v)])),
+  });
+  console.log("Search params ", params.toString())
+    // const res = await api.get(`/api/attractions_v1/search_default/?country=${country}&capital=${capital}&profile_type=${profile_type}`)
+    const res = await api.get(`/api/attractions_v1/search_default/?${params.toString()}`);
     return res.data
   },
 

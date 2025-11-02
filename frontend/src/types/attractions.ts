@@ -9,16 +9,6 @@ type Photo = {
   username?: string;
 }
 
-export type SearchFilters = {
-  country?: string;
-  city?: string;
-  category?: string;
-  minReviews?: number;
-  minPhotos?: number;
-  priceLevel?: string;
-  openNow?: boolean; // pour filtrer les attractions actuellement ouvertes
-};
-
 
 export type Attraction = {
   id: string; // location_id renvoyé par TripAdvisor

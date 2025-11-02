@@ -94,7 +94,7 @@ def logout(request):
     """Logout user and delete associated session"""
     print("loggin out/n")
     session_key = request.session.session_key
-    print("req ", request.session)
+    # print("req ", request.session)
     print("sessionid cookie:", request.COOKIES)
     print("session_key:", request.session.session_key)
 

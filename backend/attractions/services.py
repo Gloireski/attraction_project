@@ -198,7 +198,7 @@ class TripAdvisorService:
         })
         return data.get('data', []) if data else []
     
-    def search_nearby(self, latitude: float, longitude: float, address: str = None, radius: int = 10) -> List[Dict]:
+    def search_nearby(self, latitude: float, longitude: float, category: str = None, radius: int = 10) -> List[Dict]:
         """Search for nearby locations"""
         params = {
             'latLong': f"{latitude},{longitude}",
@@ -206,9 +206,8 @@ class TripAdvisorService:
             'radiusUnit': 'km',
             'language': 'fr'
         }
-        print("Searching nearby with params:", params.values())
-        if address:
-            params['address'] = address
-        
+        if category:
+            params['category'] = category
+        print("Searching nearby with params: {}\n".format(params.values()))
         data = self._make_request('location/nearby_search', params)
         return data.get('data', []) if data else []

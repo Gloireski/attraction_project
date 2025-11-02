@@ -1,7 +1,9 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useUserSession } from '@/hooks/useUserSession';
 import { useSearchAttractions } from '@/hooks/useSearchAttractions';
+import { attractionsApi } from '@/api/attractions';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import AttractionsCarousel from '@/components/AttractionsCarousel';
 import dynamic from 'next/dynamic';
 const AttractionsMap = dynamic(() => import('@/components/AttractionsMap'), { ssr: false });
@@ -15,26 +17,37 @@ export default function SearchPage() {
 
   const defaultCity = 'Paris';
   const profile_type = userSession?.profile_type || 'local'
-  const capital = userSession?.capital || defaultCity
+  const city = userSession?.capital || defaultCity
   const country = userSession?.country || 'France'
   
   const [filters, setFilters] = useState<SearchFilters>({
-    country: userSession?.country || 'France',
-    city: userSession?.capital || defaultCity,
+    country,
+    city,
     category: '',
     minReviews: 0,
     minPhotos: 0,
     priceLevel: '',
+    radius: 20,
     openNow: false,
   });
 
-  // const { data, isLoading } = useQuery({
-  //   queryKey: ['popularAttractionsByTAR', country, capital, profile_type, ],
-  //   queryFn: () => attractionsApi.getPopularByTypeAndRegion(country, capital, profile_type),
-  // });
+  const { data: attractions, isLoading, isError, refetch } = useQuery({
+    queryKey: ['attractions_search', country, city, profile_type, filters],
+    queryFn: () => 
+      attractionsApi.getPopularByTypeAndRegion(country, profile_type, filters),
 
-  const { data: attractions, isLoading } = useSearchAttractions(country, capital, profile_type,);
+    // retry: 1,
+    // staleTime: 1000 * 60 * 5
+    placeholderData: keepPreviousData
+  });
 
+  // 👇 Refetch automatically when filters change
+  useEffect(() => {
+    refetch();
+  }, [filters, refetch]);
+
+  // const { data: attractions, isLoading } = useSearchAttractions(country, capital, profile_type,);
+  console.log('reserch result: ', attractions)
   return (
     <div className="px-6 py-10">
       <h1 className="text-3xl font-bold mb-6">Recherche d’attractions</h1>
@@ -46,6 +59,10 @@ export default function SearchPage() {
           <AttractionsCarousel attractions={attractions || []} />
           <AttractionsMap attractions={attractions || []} />
         </>
+      )}
+
+      {isError && (
+        <p className='text-2xl text-red-600 font-medium'>Oups something went wrong</p>
       )}
     </div>
   );

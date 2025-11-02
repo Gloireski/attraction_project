@@ -18,7 +18,7 @@ export default function HomePage() {
   const searchParams = useSearchParams();
   // const country = searchParams.get('country') || 'Morocco';
 
-  const { data: user, isError, isLoading: sessionLoading } = useUserSession();
+  const { data: user, isError: userError, isLoading: sessionLoading } = useUserSession();
 
   //Si aucune session n'existe, on en crée une par défaut
   // useEffect(() => {
@@ -31,12 +31,17 @@ export default function HomePage() {
   // Déterminer le pays à partir de la session ou du paramètre URL
   const country =
     searchParams.get('country') ||
-    user?.country
+    user?.country || ""
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['popularAttractions', country],
     queryFn: () => attractionsApi.getPopular(country),
+
+    retry: 1,
+    staleTime: 1000 * 60 * 5
   });
+
+  console.log('reserch result: ', data)
 
   return (
     <div className="px-6 py-10">
@@ -71,6 +76,11 @@ export default function HomePage() {
           <AttractionsCarousel attractions={selectedAttractions} />
         </div>
       )}
+      {
+        isError && (
+          <p className='text-2xl font-medium text-red-700'> Oups something went wrong</p>
+        )
+      }
     </div>
   );
 }

@@ -1,9 +1,12 @@
 'use client';
 
+import { SearchFilters } from "@/types/search";
+
 type Props = {
-  filters: any;
-  onChange: (filters: any) => void;
+  filters: SearchFilters;
+  onChange: (filters: SearchFilters) => void;
 };
+
 
 const CATEGORIES = [
   { value: 'attractions', label: 'Attractions' },
@@ -17,13 +20,11 @@ const DAYS = [
 ];
 
 export default function FiltersPanel({ filters, onChange }: Props) {
-  const toggleCategory = (category: string) => {
-    const current = filters.categories || [];
-    if (current.includes(category)) {
-      onChange({ ...filters, categories: current.filter((c: string) => c !== category) });
-    } else {
-      onChange({ ...filters, categories: [...current, category] });
-    }
+  const handleCategoryChange = (category: string) => {
+    onChange({
+      ...filters,
+      category: filters.category === category ? '' : category, // deselect if clicked again
+    });
   };
 
   const toggleDay = (day: string) => {
@@ -82,11 +83,12 @@ export default function FiltersPanel({ filters, onChange }: Props) {
       {/* Catégories */}
       <div className="flex gap-4 flex-wrap">
         {CATEGORIES.map((cat) => (
-          <label key={cat.value} className="flex items-center gap-1">
+          <label key={cat.value} className="flex items-center gap-1 cursor-pointer">
             <input
-              type="checkbox"
-              checked={(filters.categories || []).includes(cat.value)}
-              onChange={() => toggleCategory(cat.value)}
+              type="radio"
+              name="category"
+              checked={filters.category === cat.value}
+              onChange={() => handleCategoryChange(cat.value)}
               className="border rounded"
             />
             {cat.label}

@@ -234,26 +234,44 @@ def attractions_search(request):
 def attractions_search_default(request):
     "Get default data for researchpage"
     country_query = request.GET.get('country')
-    capital_query = request.GET.get('capital')
+    capital_query = request.GET.get('city')
     profile_type_query = request.GET.get('profile_type')
     print("Country query:", country_query)
     limit = int(request.GET.get('limit', 10))
+
+     # Filters from frontend
+    category_filter = request.GET.get('category', '').lower() or 'attractions'
+    min_reviews = int(request.GET.get('minReviews', 0))
+    min_photos = int(request.GET.get('minPhotos', 0))
+    price_level_filter = request.GET.get('priceLevel', '').strip()
+    radius_filter = float(request.GET.get('radius', ''))
+    open_now = request.GET.get('openNow', '').lower() == 'true'
+    print(f"[DEBUG] radius: {radius_filter}, min_reviews: {min_reviews}, min_photos: {min_photos}, price_level: {price_level_filter}, open_now: {open_now}")
     service = TripAdvisorService()
-    capital_data = service.search_location(query=capital_query, country=country_query, category="geos")[0]
-    if not capital_data:
-        return Response([])
+    locations = service.search_location(query=capital_query, country=country_query, category="geos")
+    if not locations:
+        print("No locations found for capital:", capital_query)
+        return Response({"error": "No location found for capital"}, status=404)
+
+    capital_data = locations[0]
     capital_id = capital_data.get('location_id')
-    # print("Result D: ", capital_data)
-    print("{} - {}".format(capital_query, capital_id))
+    # print("{} - {}".format(capital_query, capital_id))
 
     capital_infos = service.get_location_details(capital_id)
-
-    print("cap info \n", capital_infos.get("description"))
+    latitude = capital_infos.get('latitude')
+    longitude = capital_infos.get('longitude')
+    print("category filter ", category_filter)
+    # print("Ville info \n", capital_infos.get("l"))
     # attraction populaires dans la ville
-    search_results = service.search_nearby(latitude=capital_infos.get('latitude'), longitude=capital_infos.get('longitude'), address=country_query)
+    search_results = service.search_nearby(
+        latitude,
+        longitude,
+        radius=radius_filter if radius_filter > 0 else 10,
+        category=category_filter)
     results = []
-
+    # print(search_results)
     for result in search_results:
+        print("Traitement \n")
         address_obj = result.get('address_obj', {})
         country_name = address_obj.get('country', '').strip()
 
@@ -261,18 +279,31 @@ def attractions_search_default(request):
         details = service.get_location_details(location_id)
         print("Location name: {}\n".format(result.get('name')))
         photos = service.get_location_photos(location_id)
-        
-        # print("photo ",photo_data)
        
         if not details:
-            # print(" r ",result.get('category'))
             continue
 
         category = details.get('category', {})["name"].lower()
+        if category not in VALID_CATEGORIES:
+            continue
         if profile_type_query == 'local' and category == 'hotel':
             continue
         if profile_type_query == 'professional' and category not in ['restaurant', 'hotel']:
             continue
+
+        # Apply frontend filters
+        num_reviews = int(details.get('num_reviews') or 0)
+        photo_count = int(details.get('photo_count') or 0)
+
+        if min_reviews and num_reviews < min_reviews:
+            continue
+        if min_photos and photo_count < min_photos:
+            continue
+        if price_level_filter and price_level_filter != details.get('price_level', ''):
+            print("price_level_filter {} category {}".format(price_level_filter, details.get('price_level', '')))
+            continue
+        # if open_now and not details.get('hours', {}).get('open_now_text', '').lower().startswith('open'):
+            # continue
 
         city = address_obj.get('city', '').strip()
         address = address_obj.get('address_string', '').strip()
@@ -331,12 +362,11 @@ def attractions_search_default(request):
 
         }
         # print("result_data {} - categorie {} ".format(result_data['name'], result_data['category']))
-        if result_data['category'] in VALID_ATTRACTIONS:
-            results.append(result_data)
+        results.append(result_data)
 
     # Tri par note décroissante
     results.sort(key=lambda x: x.get('rating', 0.0), reverse=True)
-    # print(results[:5])
+    # print(results[:1])
     # Limite du nombre de résultats
     return Response(results)
 
@@ -391,6 +421,7 @@ def attraction_detail(request, pk):
             "rating": float(details.get("rating") or 0),
             "num_reviews": int(details.get("num_reviews") or 0),
             "photo_url": photo_url,
+            "price_level": details.get('price_level', ''),
             "photos": photos,
             "photo_count": int(details.get("photo_count") or 0),
             "category": category_name,
